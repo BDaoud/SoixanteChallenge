@@ -5,7 +5,7 @@ var birdSpeed = 2
 var tweets = []
 var gains = []
 
-var renderer = PIXI.autoDetectRenderer(800, 600)
+var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor : 0xffffff})
 document.getElementById('game').appendChild(renderer.view)
 var stage = new PIXI.Container()
 
@@ -137,7 +137,7 @@ function animate () {
     }
   })
   gains.forEach(function (gain, index) {
-    gain.alpha -= 0.05
+    gain.alpha -= 0.04
     gain.y -= 2
     if (gain.alpha <= 0) {
       gain.destroy()
