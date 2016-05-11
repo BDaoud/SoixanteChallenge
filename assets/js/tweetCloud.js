@@ -12,6 +12,9 @@ var stage = new PIXI.Container()
 // - Sky ---
 var sky = PIXI.Sprite.fromImage('img/sky.jpg')
 stage.addChild(sky)
+var cloudTexture = PIXI.Texture.fromImage('img/cloud.png')
+var clouds = new PIXI.extras.TilingSprite(cloudTexture, renderer.width, renderer.height)
+stage.addChild(clouds)
 
 // - Score ---
 var style = {
@@ -20,7 +23,7 @@ var style = {
   stroke: '#80bfff',
   strokeThickness: 3
 }
-var score = new PIXI.Text('0 point', style)
+var score = new PIXI.Text('', style)
 score.anchor.x = 0.5
 score.x = 400
 score.y = 10
@@ -105,6 +108,7 @@ function showGains (amount, x, y) {
 animate()
 function animate () {
   requestAnimationFrame(animate)
+  clouds.tilePosition.x += 1
   tweets.forEach(function (tweet, index) {
     if (!tweet['bird'].interactive) {
       tweet['bird'].timer += 1
