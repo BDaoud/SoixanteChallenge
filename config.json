@@ -1,0 +1,11 @@
+{
+  "hostname": "127.0.0.1",
+  "port": 8080,
+  "twitter": {
+    "consumer_key": "gBW03vbufn6LeLVPBNAQgvFpo",
+    "consumer_secret": "zjMb44NkpjSAU5ZuJkHNoLbd6fVrjDZd4EINbjBdrTYmNJ0Mru",
+    "access_token_key": "566644710-yVwCKSsJV5H23ktftUCYkzv4XHXSQx2Dd5l1fBK1",
+    "access_token_secret": "MQxvhiUg07JnHnGC5deOl5YF3JweHjmau1L5h1sXCFhVC"
+  },
+  "tracking": "cannes"
+}

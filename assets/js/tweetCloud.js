@@ -5,7 +5,7 @@ var birdSpeed = 2
 var tweets = []
 var gains = []
 
-var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor : 0xffffff})
+var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0xffffff})
 document.getElementById('game').appendChild(renderer.view)
 var stage = new PIXI.Container()
 
