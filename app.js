@@ -1,10 +1,11 @@
 const http = require('http')
 const fs = require('fs')
-const Twitter = require('twitter')
+const express = require('express')
 
 // const hostname = '127.0.0.1'
 const port = 8080
 
+const Twitter = require('twitter')
 var tracking = '#flash'
 var client = new Twitter({
   // Not that safe, to improve
@@ -14,21 +15,22 @@ var client = new Twitter({
   access_token_secret: 'MQxvhiUg07JnHnGC5deOl5YF3JweHjmau1L5h1sXCFhVC'
 })
 
-const server = http.createServer((req, res) => {
-  fs.readFile('index.html', 'utf-8', function (err, content) {
-    if (err) { throw err }
-    res.statusCode = 200
-    res.setHeader('Content-Type', 'text/html')
-    res.end(content)
-  })
-})
+var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
 
-var io = require('socket.io')(server)
+server.listen(port);
+
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html')
+})
+app.use(express.static('assets'))
 
 io.on('connection', function (socket) {
   client.stream('statuses/filter', {track: tracking}, function (stream) {
     console.log('User logged !')
     stream.on('data', function (tweet) {
+      console.log(tweet.text)
       socket.emit('tweet', tweet)
     })
     stream.on('error', function (error) {
@@ -36,5 +38,3 @@ io.on('connection', function (socket) {
     })
   })
 })
-
-server.listen(port)
