@@ -14,6 +14,8 @@ var client = new Twitter({
   access_token_secret: 'MQxvhiUg07JnHnGC5deOl5YF3JweHjmau1L5h1sXCFhVC'
 })
 
+var score = 0
+
 var app = express()
 var server = require('http').Server(app)
 var io = require('socket.io')(server)
@@ -25,6 +27,7 @@ app.get('/', function (req, res) {
 app.use(express.static('assets'))
 
 io.on('connection', function (socket) {
+  socket.emit('score', score)
   client.stream('statuses/filter', {track: tracking}, function (stream) {
     console.log('User logged !')
     stream.on('data', function (tweet) {
@@ -34,5 +37,9 @@ io.on('connection', function (socket) {
     stream.on('error', function (error) {
       throw error
     })
+  })
+  socket.on('gain', function (gain) {
+    score += gain
+    socket.emit('score', score)
   })
 })

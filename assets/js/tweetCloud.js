@@ -6,6 +6,10 @@ document.body.appendChild(renderer.view)
 var stage = new PIXI.Container()
 
 var socket = io('http://127.0.0.1:8080')
+socket.on('score', function (score) {
+  $('#score').text(score)
+})
+
 socket.on('tweet', function (tweet) {
   console.log(tweet.text)
   var tweet = new PIXI.Text(tweet.text, {font: '2em', wordWrap: true})
@@ -20,10 +24,11 @@ socket.on('tweet', function (tweet) {
     tweet.scale.x += 0.3
     tweet.scale.y += 0.3
     tweet.alpha = 1
-    setTimeout(function(){
+    socket.emit('gain', 200)
+    setTimeout(function () {
       tweet.alpha = 0
       tweet.destroy
-    }, 250);
+    }, 250)
   })
   stage.addChild(tweet)
   tweets.push(tweet)
