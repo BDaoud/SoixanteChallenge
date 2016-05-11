@@ -1,17 +1,20 @@
 /* global io, PIXI,requestAnimationFrame */
 
+var birdSpeed = 10
+
 var tweets = []
 var gains = []
 
-var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0x1099bb})
-document.getElementById("game").appendChild(renderer.view)
+var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0xc4dcf5})
+document.getElementById('game').appendChild(renderer.view)
 var stage = new PIXI.Container()
+var texture = PIXI.Texture.fromImage('img/birdy.png')
 
 var style = {
   font: 'bold 2.5em Arial',
   fill: 'white',
   stroke: 'black',
-  strokeThickness: 5
+  strokeThickness: 3
 }
 var score = new PIXI.Text('0 point', style)
 score.anchor.x = 0.5
@@ -26,32 +29,35 @@ socket.on('score', function (amount) {
 
 socket.on('tweet', function (tweet) {
   // console.log(tweet.text)
-  var tweet = new PIXI.Text(tweet.text, {font: '2em', wordWrap: true})
-  tweet.anchor.x = 0.5
-  tweet.anchor.y = 0.5
-  tweet.x = 50 + 700 * Math.random()
-  tweet.y = 50 + 500 * Math.random()
-  tweet.interactive = true
-  tweet
+  var baseY = 100 + 450 * Math.random()
+  var bird = new PIXI.Sprite(texture)
+  bird.anchor.x = 0.5
+  bird.anchor.y = 0.5
+  bird.x = 800 + 50
+  bird.y = baseY
+  bird.touched = false
+  bird.interactive = true
+  bird
     .on('mousedown', onButtonDown)
     .on('touchstart', onButtonDown)
-  stage.addChild(tweet)
-  tweets.push(tweet)
+  bird.points = tweet.text.length
+  bird.timer = 0
+  stage.addChild(bird)
+  var text = new PIXI.Text(tweet.text, {font: '2em', wordWrap: true, wordWrapWidth: 250})
+  text.anchor.y = 0.5
+  text.x = 800 + 100 + 10
+  text.y = baseY
+  stage.addChild(text)
+  tweets.push({bird: bird, text: text, baseY: baseY})
 })
 
 function onButtonDown () {
-  var tweet = this
-  var amount = this.text.length
+  var amount = this.points
   showGains(amount, this.x, this.y)
   socket.emit('gain', amount)
-  tweet.interactive = false
-  tweet.scale.x += 0.3
-  tweet.scale.y += 0.3
-  tweet.alpha = 1
-  setTimeout(function () {
-    tweet.alpha = 0
-    tweet.destroy()
-  }, 250)
+  this.interactive = false
+  this.touched = true
+  this.timer = 0
 }
 
 function showGains (amount, x, y) {
@@ -74,19 +80,32 @@ animate()
 function animate () {
   requestAnimationFrame(animate)
   tweets.forEach(function (tweet, index) {
-    if (tweet.interactive) {
-      tweet.alpha -= 0.01
-      if (tweet.alpha <= 0) {
-        tweet.destroy
-        tweet.interactive = false
+    if (tweet['bird'].touched) {
+      tweet['bird'].timer += 1
+      tweet['text'].alpha -= 0.1
+      tweet['text'].y += 10 + 3 * tweet['bird'].timer
+      tweet['bird'].y += 10 + 3 * tweet['bird'].timer
+      if (tweet['bird'].y > 700) {
+        tweet['bird'].destroy
+        tweet['text'].destroy
         tweets.splice(index, 1)
-        console.log(tweets.length)
+      }
+    } else {
+      tweet['bird'].timer += 1
+      tweet['bird'].x -= birdSpeed
+      tweet['bird'].y = tweet['baseY'] + 30 * Math.sin(tweet['bird'].timer / 30.0)
+      tweet['text'].x -= birdSpeed
+      tweet['text'].y = tweet['bird'].y
+      if (tweet['bird'].x < -350) {
+        tweet['bird'].destroy
+        tweet['text'].destroy
+        tweets.splice(index, 1)
       }
     }
   })
   gains.forEach(function (gain, index) {
-    gain.alpha -= 0.02
-    gain.y -= 1
+    gain.alpha -= 0.05
+    gain.y -= 2
     if (gain.alpha <= 0) {
       gain.alpha = 0
       gain.destroy()
