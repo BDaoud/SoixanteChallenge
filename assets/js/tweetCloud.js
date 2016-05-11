@@ -7,9 +7,21 @@ var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0x1099bb})
 document.body.appendChild(renderer.view)
 var stage = new PIXI.Container()
 
+var style = {
+  font: 'bold 2.5em Arial',
+  fill: 'white',
+  stroke: 'black',
+  strokeThickness: 5
+}
+var score = new PIXI.Text('0 point', style)
+score.anchor.x = 0.5
+score.x = 400
+score.y = 10
+stage.addChild(score)
+
 var socket = io('http://127.0.0.1:8080')
-socket.on('score', function (score) {
-  $('#score').text(score)
+socket.on('score', function (amount) {
+  score.text = amount + ' points'
 })
 
 socket.on('tweet', function (tweet) {
