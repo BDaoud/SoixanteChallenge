@@ -1,0 +1,8 @@
+{
+  "name" : "SoixanteChallenge",
+  "version" : "0.0.1",
+  "dependencies" : {
+    "twitter" : "1.2.5",
+    "socket.io" : "1.4.6"
+  }
+}
