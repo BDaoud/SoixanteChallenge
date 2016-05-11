@@ -1,6 +1,5 @@
-const http = require('http')
-const fs = require('fs')
 const express = require('express')
+const path = require('path')
 
 // const hostname = '127.0.0.1'
 const port = 8080
@@ -15,14 +14,13 @@ var client = new Twitter({
   access_token_secret: 'MQxvhiUg07JnHnGC5deOl5YF3JweHjmau1L5h1sXCFhVC'
 })
 
-var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
-
-server.listen(port);
+var app = express()
+var server = require('http').Server(app)
+var io = require('socket.io')(server)
+server.listen(port)
 
 app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html')
+  res.sendFile(path.join(__dirname, 'index.html'))
 })
 app.use(express.static('assets'))
 
