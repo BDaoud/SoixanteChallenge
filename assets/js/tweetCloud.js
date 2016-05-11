@@ -13,6 +13,18 @@ socket.on('tweet', function (tweet) {
   tweet.anchor.y = 0.5
   tweet.x = 50 + 700 * Math.random()
   tweet.y = 50 + 500 * Math.random()
+  tweet.interactive = true
+  // DO not handle touchstart (yet?)
+  tweet.on('mousedown', function () {
+    tweet.interactive = false
+    tweet.scale.x += 0.3
+    tweet.scale.y += 0.3
+    tweet.alpha = 1
+    setTimeout(function(){
+      tweet.alpha = 0
+      tweet.destroy
+    }, 250);
+  })
   stage.addChild(tweet)
   tweets.push(tweet)
 })
@@ -21,9 +33,12 @@ animate()
 function animate () {
   requestAnimationFrame(animate)
   tweets.forEach(function (tweet) {
-    tweet.alpha -= 0.01
-    if (tweet.alpha <= 0) {
-      tweet.destroy
+    if (tweet.interactive) {
+      tweet.alpha -= 0.01
+      if (tweet.alpha <= 0) {
+        tweet.destroy
+        tweet.interactive = false
+      }
     }
   })
   renderer.render(stage)
