@@ -29,7 +29,7 @@ io.on('connection', function (socket) {
   client.stream('statuses/filter', {track: tracking}, function (stream) {
     console.log('User logged !')
     stream.on('data', function (tweet) {
-      console.log(tweet.text)
+      socket.emit('tweet', tweet)
     })
     stream.on('error', function (error) {
       throw error

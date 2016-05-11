@@ -12,9 +12,8 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
           var socket = io('http://127.0.0.1:8080')
-          socket.on('news', function (data) {
-            console.log(data)
-            socket.emit('my other event', { my: 'data' })
+          socket.on('tweet', function (tweet) {
+            console.log(tweet.text)
           })
         </script>
     </body>
