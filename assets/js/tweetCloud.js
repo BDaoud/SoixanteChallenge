@@ -4,7 +4,7 @@ var tweets = []
 var gains = []
 
 var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0x1099bb})
-document.body.appendChild(renderer.view)
+document.getElementById("game").appendChild(renderer.view)
 var stage = new PIXI.Container()
 
 var style = {
