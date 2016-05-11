@@ -5,7 +5,7 @@ const path = require('path')
 const port = 8080
 
 const Twitter = require('twitter')
-var tracking = '#flash'
+var tracking = 'cannes'
 var client = new Twitter({
   // Not that safe, to improve
   consumer_key: 'gBW03vbufn6LeLVPBNAQgvFpo',
