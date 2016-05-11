@@ -15,9 +15,9 @@ stage.addChild(sky)
 
 // - Score ---
 var style = {
-  font: 'bold 2.5em Arial',
+  font: 'bold 2.5em Verdana, Geneva, sans-serif',
   fill: 'white',
-  stroke: 'black',
+  stroke: '#80bfff',
   strokeThickness: 3
 }
 var score = new PIXI.Text('0 point', style)
@@ -44,14 +44,20 @@ var textures = {
   ]
 }
 
+var styleTweet = {
+  font: '1em Arial',
+  fill: 'white',
+  wordWrap: true,
+  wordWrapWidth: 250,
+  stroke: '#c0defb',
+  strokeThickness: 1
+}
+
 socket.on('tweet', function (tweet) {
   var baseY = 100 + 450 * Math.random()
   var bird = new PIXI.Sprite(textures['body']['base'])
   bird.anchor.x = 0.5
   bird.anchor.y = 0.5
-  bird.x = 800 + 50
-  bird.y = baseY
-  bird.touched = false
   bird.interactive = true
   bird
     .on('mousedown', onButtonDown)
@@ -62,23 +68,12 @@ socket.on('tweet', function (tweet) {
   var wing = new PIXI.Sprite(textures['wing'][0])
   wing.anchor.x = 0.5
   wing.anchor.y = 0.5
-  wing.x = 800 + 50
-  wing.y = baseY
   stage.addChild(wing)
-  var style = {
-    font: '1em Arial',
-    fill: 'white',
-    wordWrap: true,
-    wordWrapWidth: 250,
-    stroke: '#c0defb',
-    strokeThickness: 1
-  }
-  var text = new PIXI.Text(tweet.text, style)
+  var text = new PIXI.Text(tweet.text, styleTweet)
   text.anchor.y = 0.5
-  text.x = 800 + 100 + 10
-  text.y = baseY
   stage.addChild(text)
   tweets.push({bird: bird, wing: wing, text: text, baseY: baseY})
+  moveBird(tweets[tweets.length - 1], 900, baseY)
 })
 
 // - Interactivity & Animation ---
@@ -87,19 +82,18 @@ function onButtonDown () {
   showGains(amount, this.x, this.y)
   socket.emit('gain', amount)
   this.interactive = false
-  this.touched = true
   this.timer = 0
   this.texture = textures['body']['crossed']
 }
 
+var styleGains = {
+  font: 'bold 2em Verdana, Geneva, sans-serif',
+  fill: 'white',
+  stroke: '#80bfff',
+  strokeThickness: 2
+}
 function showGains (amount, x, y) {
-  var style = {
-    font: 'bold 2em Arial',
-    fill: 'white',
-    stroke: 'black',
-    strokeThickness: 5
-  }
-  var gain = new PIXI.Text(amount, style)
+  var gain = new PIXI.Text(amount, styleGains)
   gain.anchor.x = 0.5
   gain.anchor.y = 1.0
   gain.x = x
@@ -112,42 +106,29 @@ animate()
 function animate () {
   requestAnimationFrame(animate)
   tweets.forEach(function (tweet, index) {
-    if (tweet['bird'].touched) {
+    if (!tweet['bird'].interactive) {
       tweet['bird'].timer += 1
       tweet['text'].alpha -= 0.1
-      tweet['bird'].y += tweet['bird'].timer
-      tweet['text'].y = tweet['bird'].y
-      tweet['wing'].y = tweet['bird'].y
+      moveBird(tweet, tweet['bird'].x, tweet['bird'].y + tweet['bird'].timer)
       if (tweet['bird'].y > 700) {
-        tweet['bird'].destroy
-        tweet['wing'].destroy
-        tweet['text'].destroy
-        tweets.splice(index, 1)
+        killBird(index)
       }
     } else {
       // Eyes animation
       var step = tweet['bird'].timer % 50
-      if (step == 7 || step == 11) {
+      if (step === 7 || step === 11) {
         tweet['bird'].texture = textures['body']['closed']
-      } else if (step == 9 || step == 13) {
+      } else if (step === 9 || step === 13) {
         tweet['bird'].texture = textures['body']['base']
       }
       // Wing animation
-      if (tweet['bird'].timer % 4 == 0) {
+      if (tweet['bird'].timer % 4 === 0) {
         tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % 8) / 4]
       }
       tweet['bird'].timer += 1
-      tweet['bird'].x -= birdSpeed
-      tweet['bird'].y = tweet['baseY'] + 30 * Math.sin(tweet['bird'].timer / 30.0)
-      tweet['wing'].x -= birdSpeed
-      tweet['wing'].y = tweet['bird'].y
-      tweet['text'].x -= birdSpeed
-      tweet['text'].y = tweet['bird'].y
+      moveBird(tweet, tweet['bird'].x - birdSpeed, tweet['baseY'] + 30 * Math.sin(tweet['bird'].timer / 30.0))
       if (tweet['bird'].x < -350) {
-        tweet['bird'].destroy
-        tweet['wing'].destroy
-        tweet['text'].destroy
-        tweets.splice(index, 1)
+        killBird(index)
       }
     }
   })
@@ -155,10 +136,29 @@ function animate () {
     gain.alpha -= 0.05
     gain.y -= 2
     if (gain.alpha <= 0) {
-      gain.alpha = 0
       gain.destroy()
+      stage.removeChild(gain)
       gains.splice(index, 1)
     }
   })
   renderer.render(stage)
+}
+
+function killBird (index) {
+  tweets[index]['bird'].destroy
+  tweets[index]['wing'].destroy
+  tweets[index]['text'].destroy
+  stage.removeChild(tweets[index]['bird'])
+  stage.removeChild(tweets[index]['wing'])
+  stage.removeChild(tweets[index]['text'])
+  tweets.splice(index, 1)
+}
+
+function moveBird (tweet, x, y) {
+  tweet['bird'].x = x
+  tweet['bird'].y = y
+  tweet['wing'].x = x
+  tweet['wing'].y = y
+  tweet['text'].x = x + 50
+  tweet['text'].y = y
 }
