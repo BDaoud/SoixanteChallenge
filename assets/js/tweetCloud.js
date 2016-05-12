@@ -134,10 +134,10 @@ function animate () {
       // Moving
       moveBird(tweet, tweet['bird'].x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(tweet['bird'].timer / 30.0))
       // Disappearance
-      if (tweet['bird'].x < 0) {
+      if (tweet['bird'].x < -50) {
         tweet['text'].alpha -= 0.02
       }
-      if (tweet['bird'].x < -350) {
+      if (tweet['bird'].x < -150) {
         killBird(index)
       }
     }
