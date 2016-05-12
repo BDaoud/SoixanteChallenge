@@ -66,8 +66,8 @@ socket.on('tweet', function (tweet) {
   bird.points = tweet.text.length
   bird.timer = 0
   bird.baseY = baseY
-  bird.amplitude = 10 + 20 * Math.random() // 10~30
-  bird.speed = (0.8 + 0.4 * Math.random()) * birdSpeed // 80%~120% of birdSpeed
+  bird.amplitude = 5 + 45 * Math.random() // 5~50
+  bird.speed = (0.6 + 0.5 * Math.random()) * birdSpeed // 60%~140% of birdSpeed
   stage.addChild(bird)
   var wing = new PIXI.Sprite(textures['wing'][0])
   wing.anchor.x = 0.5
