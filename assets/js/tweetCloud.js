@@ -119,6 +119,7 @@ function animate () {
         killBird(index)
       }
     } else {
+      tweet['bird'].timer += 1
       // Eyes animation
       var step = tweet['bird'].timer % 100
       if (step === 5 || step === 10 || step === 50) {
@@ -130,8 +131,12 @@ function animate () {
       if (tweet['bird'].timer % 4 === 0) {
         tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % 8) / 4]
       }
-      tweet['bird'].timer += 1
+      // Moving
       moveBird(tweet, tweet['bird'].x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(tweet['bird'].timer / 30.0))
+      // Disappearance
+      if (tweet['bird'].x < 0) {
+        tweet['text'].alpha -= 0.02
+      }
       if (tweet['bird'].x < -350) {
         killBird(index)
       }
