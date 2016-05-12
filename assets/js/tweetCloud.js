@@ -120,10 +120,10 @@ function animate () {
       }
     } else {
       // Eyes animation
-      var step = tweet['bird'].timer % 50
-      if (step === 7 || step === 11) {
+      var step = tweet['bird'].timer % 100
+      if (step === 5 || step === 10 || step === 50) {
         tweet['bird'].texture = textures['body']['closed']
-      } else if (step === 9 || step === 13) {
+      } else if (step === 8 || step === 13 || step === 53) {
         tweet['bird'].texture = textures['body']['base']
       }
       // Wing animation
