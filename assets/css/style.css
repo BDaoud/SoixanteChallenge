@@ -1,14 +1,25 @@
+@font-face {
+    font-family: CaviarDreams;
+    src: url(../font/CaviarDreams.ttf);
+}
+
 body {
   width: 800px;
   margin: auto;
 }
 
 h1 {
-  color: #7FBCFF;
-  font-family: Georgia, serif;
+  color: #666;
+  font-family: CaviarDreams;
   font-size: 3em;
-  font-weight: 100;
+  font-weight: normal;
   margin: 1em 0 0.1em 0;
+}
+
+h1 img {
+  margin-bottom: -0.1em;
+  margin-right: 0.2em;
+  height: 1em;
 }
 
 .footer {
