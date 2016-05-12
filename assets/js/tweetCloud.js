@@ -49,11 +49,9 @@ var textures = {
 
 var styleTweet = {
   font: '1em Arial',
-  fill: '#666',
+  fill: 'rgba(0,0,0,0.5)',
   wordWrap: true,
   wordWrapWidth: 250
-  // stroke: 'rgba(0,127,255,0.2)',
-  // strokeThickness: 2
 }
 
 socket.on('tweet', function (tweet) {
@@ -67,6 +65,9 @@ socket.on('tweet', function (tweet) {
     .on('touchstart', onButtonDown)
   bird.points = tweet.text.length
   bird.timer = 0
+  bird.baseY = baseY
+  bird.amplitude = 10 + 20 * Math.random() // 10~30
+  bird.speed = (0.8 + 0.4 * Math.random()) * birdSpeed // 80%~120% of birdSpeed
   stage.addChild(bird)
   var wing = new PIXI.Sprite(textures['wing'][0])
   wing.anchor.x = 0.5
@@ -75,7 +76,7 @@ socket.on('tweet', function (tweet) {
   var text = new PIXI.Text(tweet.text, styleTweet)
   text.anchor.y = 0.5
   stage.addChild(text)
-  tweets.push({bird: bird, wing: wing, text: text, baseY: baseY})
+  tweets.push({bird: bird, wing: wing, text: text})
   moveBird(tweets[tweets.length - 1], 900, baseY)
 })
 
@@ -130,7 +131,7 @@ function animate () {
         tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % 8) / 4]
       }
       tweet['bird'].timer += 1
-      moveBird(tweet, tweet['bird'].x - birdSpeed, tweet['baseY'] + 30 * Math.sin(tweet['bird'].timer / 30.0))
+      moveBird(tweet, tweet['bird'].x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(tweet['bird'].timer / 30.0))
       if (tweet['bird'].x < -350) {
         killBird(index)
       }
