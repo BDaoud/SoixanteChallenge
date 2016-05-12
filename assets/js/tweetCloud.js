@@ -33,6 +33,9 @@ var socket = io('http://127.0.0.1:8080')
 socket.on('score', function (amount) {
   score.text = amount + ' points'
 })
+socket.on('disconnected', function (amount) {
+  score.text = 'Disconnected'
+})
 
 // - Tweets ---
 var textures = {
@@ -49,11 +52,11 @@ var textures = {
 
 var styleTweet = {
   font: '1em Arial',
-  fill: 'white',
+  fill: '#666',
   wordWrap: true,
-  wordWrapWidth: 250,
-  stroke: '#c0defb',
-  strokeThickness: 1
+  wordWrapWidth: 250
+  // stroke: 'rgba(0,127,255,0.2)',
+  // strokeThickness: 2
 }
 
 socket.on('tweet', function (tweet) {

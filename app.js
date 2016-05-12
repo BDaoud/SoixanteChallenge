@@ -31,7 +31,7 @@ io.on('connection', function (socket) {
       socket.emit('tweet', tweet)
     })
     stream.on('error', function (error) {
-      console.log(error)
+      io.emit('disconnected');
       throw error
     })
   })
@@ -39,4 +39,7 @@ io.on('connection', function (socket) {
     score += gain
     socket.emit('score', score)
   })
+  socket.on('disconnect', function () {
+    io.emit('disconnected');
+  });
 })
