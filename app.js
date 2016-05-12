@@ -22,24 +22,21 @@ server.listen(config['port'])
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'index.html'))
 })
-app.use(express.static('assets'))
+.use(express.static('assets'))
+
+client.stream('statuses/filter', {track: tracking}, function (stream) {
+  stream.on('data', function (tweet) {
+    io.emit('tweet', tweet)
+  })
+  stream.on('error', function (error) {
+    throw error
+  })
+})
 
 io.on('connection', function (socket) {
   socket.emit('score', score)
-  client.stream('statuses/filter', {track: tracking}, function (stream) {
-    stream.on('data', function (tweet) {
-      socket.emit('tweet', tweet)
-    })
-    stream.on('error', function (error) {
-      io.emit('disconnected');
-      throw error
-    })
-  })
   socket.on('gain', function (gain) {
     score += gain
     socket.emit('score', score)
   })
-  socket.on('disconnect', function () {
-    io.emit('disconnected');
-  });
 })
