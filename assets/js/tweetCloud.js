@@ -1,14 +1,22 @@
 /* global io, PIXI,requestAnimationFrame */
 
-// VARIABLES
-//   Options you can set you custom the app
+// = VARIABLES ==================
+// Options you can set you custom the app
 var cloudSpeed = 1
 var birdSpeed = 2
 var birdSpeedRange = 0.8 // Percent
 var birdFallingAcceleration = 1
 var birdMinAplitude = 5
 var birdMaxAplitude = 50
+var birdSinTimer = 30.0
 var pointsPerTweets = 200 // -1 for 1pt per character
+var GainFadeOutTime = 25.0
+var GainFadeOutDist = 50
+var TweetFadeOutTime = 10.0
+var wingSpeed = 2
+var winkDuration = 3
+var winkLoop = 100
+var winkTimes = [5, 10, 50]
 var styleTweet = {
   font: '1em Verdana, Geneva, sans-serif',
   fill: 'rgba(0,0,0,0.5)',
@@ -55,11 +63,6 @@ score.x = 400
 score.y = 10
 stage.addChild(score)
 
-var socket = io('http://127.0.0.1:8080')
-socket.on('score', function (amount) {
-  score.text = amount + ' points'
-})
-
 // - Tweets ---
 var textures = {
   body: {
@@ -73,9 +76,17 @@ var textures = {
   ]
 }
 
-socket.on('tweet', createTweet)
+// = EVENTS =====================
+var socket = io('http://127.0.0.1:8080')
 
-function createTweet (text) {
+// - on Score -----
+socket.on('score', function (amount) {
+  score.text = amount + ' points'
+})
+
+// - on Tweet -----
+socket.on('tweet', onTweet)
+function onTweet (text) {
   var tweet = createBird()
   if (pointsPerTweets !== -1) {
     tweet['bird'].points = pointsPerTweets
@@ -86,7 +97,7 @@ function createTweet (text) {
   tweets.push(tweet)
 }
 
-// - Interactivity & Animation ---
+// - on Button Down -----
 function onButtonDown () {
   var amount = this.points
   showGains(amount, this.x, this.y)
@@ -96,16 +107,7 @@ function onButtonDown () {
   this.texture = textures['body']['crossed']
 }
 
-function showGains (amount, x, y) {
-  var gain = new PIXI.Text(amount, styleGains)
-  gain.anchor.x = 0.5
-  gain.anchor.y = 1.0
-  gain.x = x
-  gain.y = y
-  stage.addChild(gain)
-  gains.push(gain)
-}
-
+// = ANIMATIONS =================
 animate()
 function animate () {
   requestAnimationFrame(animate)
@@ -129,45 +131,55 @@ function animateTweet (tweet, index) {
   var x = tweet['bird'].x
   var y = tweet['bird'].y
   if (!tweet['bird'].interactive) {
-    tweet['bird'].timer += 1
-    tweet['text'].alpha -= 0.1
+    tweet['text'].alpha -= 1.0 / TweetFadeOutTime
     moveBird(tweet, x, y + birdFallingAcceleration * t)
-    if (tweet['bird'].y > 700) {
+    if (tweet['bird'].y > stageHeight + spriteSize / 2) {
       killBird(index)
     }
   } else {
     // Disappearance
-    if (x < -50) {
-      tweet['text'].alpha -= 0.02
-    } else if (x < -150) {
+    if (x < -1.5 * spriteSize) {
       killBird(index)
+    } else if (x < -0.5 * spriteSize) {
+      tweet['text'].alpha -= tweet['bird'].speed / spriteSize
+      moveBird(tweet, x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(t / birdSinTimer))
     } else {
       // Eyes animation
-      var step = tweet['bird'].timer % 100
-      if (step === 5 || step === 10 || step === 50) {
+      var step = tweet['bird'].timer % winkLoop
+      if (winkTimes.includes(step)) {
         tweet['bird'].texture = textures['body']['closed']
-      } else if (step === 8 || step === 13 || step === 53) {
+      } else if (winkTimes.includes(step - winkDuration)) {
         tweet['bird'].texture = textures['body']['base']
       }
       // Wing animation
-      if (tweet['bird'].timer % 4 === 0) {
-        tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % 8) / 4]
+      if (tweet['bird'].timer % (wingSpeed * 2) === 0) {
+        tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % (wingSpeed * 4)) / (wingSpeed * 2)]
       }
       // Moving
-      moveBird(tweet, x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(t / 30.0))
+      moveBird(tweet, x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(t / birdSinTimer))
     }
   }
 }
 
 function animateGain (gain, index) {
-  gain.alpha -= 0.04
-  gain.y -= 2
+  gain.alpha -= 1.0 / GainFadeOutTime
+  gain.y -= GainFadeOutDist / GainFadeOutTime
   if (gain.alpha <= 0) {
     killSprite(gain)
     gains.splice(index, 1)
   }
 }
 
+function moveBird (tweet, x, y) {
+  tweet['bird'].x = x
+  tweet['bird'].y = y
+  tweet['wing'].x = x
+  tweet['wing'].y = y
+  tweet['text'].x = x + spriteSize / 2 + SpriteSpacing
+  tweet['text'].y = y
+}
+
+// = SPRITE CREATION ============
 function createBird () {
   var bird = new PIXI.Sprite(textures['body']['base'])
   bird.anchor.x = 0.5
@@ -193,23 +205,25 @@ function createBird () {
   return tweet
 }
 
-function killBird (index) {
-  killSprite(tweets[index]['bird'])
-  killSprite(tweets[index]['wing'])
-  killSprite(tweets[index]['text'])
-  tweets.splice(index, 1)
+function showGains (amount, x, y) {
+  var gain = new PIXI.Text(amount, styleGains)
+  gain.anchor.x = 0.5
+  gain.anchor.y = 1.0
+  gain.x = x
+  gain.y = y
+  stage.addChild(gain)
+  gains.push(gain)
 }
 
+// = SPRITE DESTRUCTION =========
 function killSprite (sprite) {
   sprite.destroy
   stage.removeChild(sprite)
 }
 
-function moveBird (tweet, x, y) {
-  tweet['bird'].x = x
-  tweet['bird'].y = y
-  tweet['wing'].x = x
-  tweet['wing'].y = y
-  tweet['text'].x = x + spriteSize / 2 + SpriteSpacing
-  tweet['text'].y = y
+function killBird (index) {
+  killSprite(tweets[index]['bird'])
+  killSprite(tweets[index]['wing'])
+  killSprite(tweets[index]['text'])
+  tweets.splice(index, 1)
 }
