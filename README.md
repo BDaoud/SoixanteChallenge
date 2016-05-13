@@ -10,7 +10,8 @@ Use the following command to install all the dependencies :
     npm install
 
 ## Run
-Launch the server
+First you need to fill the config.json file with Twitter auth's tokens (with reading permission).
+Launch the server :
 
     node app.js
   
