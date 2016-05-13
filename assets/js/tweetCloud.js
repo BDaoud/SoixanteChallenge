@@ -2,14 +2,16 @@
 
 // = VARIABLES ==================
 // Options you can set you custom the app
+var pointsPerTweets = 200 // -1 for 1pt per character
+// - Speed vars -----
 var cloudSpeed = 1
 var birdSpeed = 2
 var birdSpeedRange = 0.8 // Percent
 var birdFallingAcceleration = 1
 var birdMinAplitude = 5
 var birdMaxAplitude = 50
+// - Animation vars -----
 var birdSinTimer = 30.0
-var pointsPerTweets = 200 // -1 for 1pt per character
 var GainFadeOutTime = 25.0
 var GainFadeOutDist = 50
 var TweetFadeOutTime = 10.0
@@ -17,6 +19,7 @@ var wingSpeed = 2
 var winkDuration = 3
 var winkLoop = 100
 var winkTimes = [5, 10, 50]
+// - Style vars -----
 var styleTweet = {
   font: '1em Verdana, Geneva, sans-serif',
   fill: 'rgba(0,0,0,0.5)',
@@ -37,55 +40,84 @@ var styleGains = {
 }
 
 // Images parameters (not to change accept if you change the images)
-var SpriteSpacing = 0 // betweet the bird and the text
+var SpriteSpacing = 0 // between the bird and the text
 var spriteSize = 100
 var stageHeight = 600
 var stageWidth = 800
 
+// = ASSETS LOADING =============
+PIXI.loader
+  .add('sky', 'img/sky.jpg')
+  .add('cloud', 'img/cloud.png')
+  .add('birdbody_base', 'img/birdbody_base.png')
+  .add('birdbody_closed', 'img/birdbody_closed.png')
+  .add('birdbody_crossed', 'img/birdbody_crossed.png')
+  .add('birdwing_1', 'img/birdwing_1.png')
+  .add('birdwing_2', 'img/birdwing_2.png')
+  .load(onAssetsLoaded)
+
+// - Texture vars -----
+var skyTexture
+var cloudTexture
+var birdTextures
+
+// - onAssetsLoaded -----
+function onAssetsLoaded (loader, resources) {
+  skyTexture = resources['sky'].texture
+  cloudTexture = resources['cloud'].texture
+  birdTextures = {
+    body: {
+      base: resources['birdbody_base'].texture,
+      closed: resources['birdbody_closed'].texture,
+      crossed: resources['birdbody_crossed'].texture
+    },
+    wing: [
+      resources['birdwing_1'].texture,
+      resources['birdwing_2'].texture
+    ]
+  }
+  initializeStage()
+}
+
+// = INITIALIZATION =============
+var renderer
+var stage
+
+// - Sprite vars -----
 var tweets = []
 var gains = []
+var clouds
+var score
+var sky
 
-var renderer = PIXI.autoDetectRenderer(stageWidth, stageHeight, {backgroundColor: 0xffffff})
-document.getElementById('game').appendChild(renderer.view)
-var stage = new PIXI.Container()
-
-// - Sky ---
-var sky = PIXI.Sprite.fromImage('img/sky.jpg')
-stage.addChild(sky)
-var cloudTexture = PIXI.Texture.fromImage('img/cloud.png')
-var clouds = new PIXI.extras.TilingSprite(cloudTexture, renderer.width, renderer.height)
-stage.addChild(clouds)
-
-// - Score ---
-var score = new PIXI.Text('', styleScore)
-score.anchor.x = 0.5
-score.x = 400
-score.y = 10
-stage.addChild(score)
-
-// - Tweets ---
-var textures = {
-  body: {
-    base: PIXI.Texture.fromImage('img/birdbody_base.png'),
-    closed: PIXI.Texture.fromImage('img/birdbody_closed.png'),
-    crossed: PIXI.Texture.fromImage('img/birdbody_crossed.png')
-  },
-  wing: [
-    PIXI.Texture.fromImage('img/birdwing_1.png'),
-    PIXI.Texture.fromImage('img/birdwing_2.png')
-  ]
+// - initializeStage -----
+function initializeStage () {
+  renderer = PIXI.autoDetectRenderer(stageWidth, stageHeight, {backgroundColor: 0xffffff})
+  document.getElementById('game').appendChild(renderer.view)
+  stage = new PIXI.Container()
+  sky = new PIXI.Sprite(skyTexture)
+  stage.addChild(sky)
+  clouds = new PIXI.extras.TilingSprite(cloudTexture, renderer.width, renderer.height)
+  stage.addChild(clouds)
+  score = new PIXI.Text('', styleScore)
+  score.anchor.x = 0.5
+  score.x = 400
+  score.y = 10
+  stage.addChild(score)
+  socket.on('score', onScore)
+  socket.on('tweet', onTweet)
+  requestAnimationFrame(animate)
 }
 
 // = EVENTS =====================
 var socket = io('http://127.0.0.1:8080')
 
 // - on Score -----
-socket.on('score', function (amount) {
+function onScore (amount) {
   score.text = amount + ' points'
-})
+}
 
 // - on Tweet -----
-socket.on('tweet', onTweet)
 function onTweet (text) {
   var tweet = createBird()
   if (pointsPerTweets !== -1) {
@@ -104,11 +136,10 @@ function onButtonDown () {
   socket.emit('gain', amount)
   this.interactive = false
   this.timer = 0
-  this.texture = textures['body']['crossed']
+  this.texture = birdTextures['body']['crossed']
 }
 
 // = ANIMATIONS =================
-animate()
 function animate () {
   requestAnimationFrame(animate)
   animateSky()
@@ -121,10 +152,12 @@ function animate () {
   renderer.render(stage)
 }
 
+// - Sky animation -----
 function animateSky () {
   clouds.tilePosition.x += cloudSpeed
 }
 
+// - Tweet animation -----
 function animateTweet (tweet, index) {
   tweet['bird'].timer += 1
   var t = tweet['bird'].timer
@@ -147,13 +180,13 @@ function animateTweet (tweet, index) {
       // Eyes animation
       var step = tweet['bird'].timer % winkLoop
       if (winkTimes.includes(step)) {
-        tweet['bird'].texture = textures['body']['closed']
+        tweet['bird'].texture = birdTextures['body']['closed']
       } else if (winkTimes.includes(step - winkDuration)) {
-        tweet['bird'].texture = textures['body']['base']
+        tweet['bird'].texture = birdTextures['body']['base']
       }
       // Wing animation
       if (tweet['bird'].timer % (wingSpeed * 2) === 0) {
-        tweet['wing'].texture = textures['wing'][(tweet['bird'].timer % (wingSpeed * 4)) / (wingSpeed * 2)]
+        tweet['wing'].texture = birdTextures['wing'][(tweet['bird'].timer % (wingSpeed * 4)) / (wingSpeed * 2)]
       }
       // Moving
       moveBird(tweet, x - tweet['bird'].speed, tweet['bird'].baseY + tweet['bird'].amplitude * Math.sin(t / birdSinTimer))
@@ -161,6 +194,7 @@ function animateTweet (tweet, index) {
   }
 }
 
+// - Gain animation -----
 function animateGain (gain, index) {
   gain.alpha -= 1.0 / GainFadeOutTime
   gain.y -= GainFadeOutDist / GainFadeOutTime
@@ -170,6 +204,7 @@ function animateGain (gain, index) {
   }
 }
 
+// - Bird movement -----
 function moveBird (tweet, x, y) {
   tweet['bird'].x = x
   tweet['bird'].y = y
@@ -180,8 +215,9 @@ function moveBird (tweet, x, y) {
 }
 
 // = SPRITE CREATION ============
+// - Bird creation -----
 function createBird () {
-  var bird = new PIXI.Sprite(textures['body']['base'])
+  var bird = new PIXI.Sprite(birdTextures['body']['base'])
   bird.anchor.x = 0.5
   bird.anchor.y = 0.5
   bird.interactive = true
@@ -191,9 +227,9 @@ function createBird () {
   bird.timer = 0
   bird.baseY = 100 + (stageHeight - 150) * Math.random()
   bird.amplitude = birdMinAplitude + (birdMaxAplitude - birdMinAplitude) * Math.random() // 5~50
-  bird.speed = (1.0 - birdSpeedRange + (2 * birdSpeedRange) * Math.random()) * birdSpeed // 60%~140% of birdSpeed
+  bird.speed = (1.0 - birdSpeedRange / 2 + birdSpeedRange * Math.random()) * birdSpeed // 60%~140% of birdSpeed
   stage.addChild(bird)
-  var wing = new PIXI.Sprite(textures['wing'][0])
+  var wing = new PIXI.Sprite(birdTextures['wing'][0])
   wing.anchor.x = 0.5
   wing.anchor.y = 0.5
   stage.addChild(wing)
@@ -205,6 +241,7 @@ function createBird () {
   return tweet
 }
 
+// - Gain creation -----
 function showGains (amount, x, y) {
   var gain = new PIXI.Text(amount, styleGains)
   gain.anchor.x = 0.5
@@ -216,11 +253,13 @@ function showGains (amount, x, y) {
 }
 
 // = SPRITE DESTRUCTION =========
+// - Generic -----
 function killSprite (sprite) {
   sprite.destroy
   stage.removeChild(sprite)
 }
 
+// - For tweets -----
 function killBird (index) {
   killSprite(tweets[index]['bird'])
   killSprite(tweets[index]['wing'])
