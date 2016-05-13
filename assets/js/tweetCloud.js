@@ -3,6 +3,7 @@
 // = VARIABLES ==================
 // Options you can set you custom the app
 var pointsPerTweets = 200 // -1 for 1pt per character
+var maxAmountOfBirds = 50 // -1 for no limit
 // - Speed vars -----
 var cloudSpeed = 1
 var birdSpeed = 2
@@ -119,6 +120,9 @@ function onScore (amount) {
 
 // - on Tweet -----
 function onTweet (text) {
+  if (tweets.length >= maxAmountOfBirds && maxAmountOfBirds !== -1) {
+    return false
+  }
   var tweet = createBird()
   if (pointsPerTweets !== -1) {
     tweet['bird'].points = pointsPerTweets
