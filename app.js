@@ -18,6 +18,12 @@ var app = express()
 var server = require('http').Server(app)
 var io = require('socket.io')(server)
 server.listen(config['port'])
+.on('listening', () => {
+  console.log('Server listening at localhost:' + config['port'])
+})
+.on('error', (err) => {
+  throw err
+})
 
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'index.html'))
@@ -25,6 +31,7 @@ app.get('/', function (req, res) {
 .use(express.static('assets'))
 
 client.stream('statuses/filter', {track: tracking}, function (stream) {
+  console.log('Twitter streaming, tracking the word "' + tracking + '"')
   stream.on('data', function (tweet) {
     if (tweet.text) {
       io.emit('tweet', tweet.text)
