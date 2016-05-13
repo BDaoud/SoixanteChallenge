@@ -9,11 +9,35 @@ var birdFallingAcceleration = 1
 var birdMinAplitude = 5
 var birdMaxAplitude = 50
 var pointsPerTweets = 200 // -1 for 1pt per character
+var styleTweet = {
+  font: '1em Verdana, Geneva, sans-serif',
+  fill: 'rgba(0,0,0,0.5)',
+  wordWrap: true,
+  wordWrapWidth: 250
+}
+var styleScore = {
+  font: 'bold 2.5em Verdana, Geneva, sans-serif',
+  fill: 'white',
+  stroke: '#80bfff',
+  strokeThickness: 3
+}
+var styleGains = {
+  font: 'bold 2em Verdana, Geneva, sans-serif',
+  fill: 'white',
+  stroke: '#80bfff',
+  strokeThickness: 2
+}
+
+// Images parameters (not to change accept if you change the images)
+var SpriteSpacing = 0 // betweet the bird and the text
+var spriteSize = 100
+var stageHeight = 600
+var stageWidth = 800
 
 var tweets = []
 var gains = []
 
-var renderer = PIXI.autoDetectRenderer(800, 600, {backgroundColor: 0xffffff})
+var renderer = PIXI.autoDetectRenderer(stageWidth, stageHeight, {backgroundColor: 0xffffff})
 document.getElementById('game').appendChild(renderer.view)
 var stage = new PIXI.Container()
 
@@ -25,13 +49,7 @@ var clouds = new PIXI.extras.TilingSprite(cloudTexture, renderer.width, renderer
 stage.addChild(clouds)
 
 // - Score ---
-var style = {
-  font: 'bold 2.5em Verdana, Geneva, sans-serif',
-  fill: 'white',
-  stroke: '#80bfff',
-  strokeThickness: 3
-}
-var score = new PIXI.Text('', style)
+var score = new PIXI.Text('', styleScore)
 score.anchor.x = 0.5
 score.x = 400
 score.y = 10
@@ -55,42 +73,18 @@ var textures = {
   ]
 }
 
-var styleTweet = {
-  font: '1em Arial',
-  fill: 'rgba(0,0,0,0.5)',
-  wordWrap: true,
-  wordWrapWidth: 250
-}
+socket.on('tweet', createTweet)
 
-socket.on('tweet', function (tweet) {
-  var baseY = 100 + 450 * Math.random()
-  var bird = new PIXI.Sprite(textures['body']['base'])
-  bird.anchor.x = 0.5
-  bird.anchor.y = 0.5
-  bird.interactive = true
-  bird
-    .on('mousedown', onButtonDown)
-    .on('touchstart', onButtonDown)
+function createTweet (text) {
+  var tweet = createBird()
   if (pointsPerTweets !== -1) {
-    bird.points = pointsPerTweets
+    tweet['bird'].points = pointsPerTweets
   } else {
-    bird.points = tweet.text.length
+    tweet['bird'].points = text.length
   }
-  bird.timer = 0
-  bird.baseY = baseY
-  bird.amplitude = birdMinAplitude + (birdMaxAplitude - birdMinAplitude) * Math.random() // 5~50
-  bird.speed = (1.0 - birdSpeedRange + (2 * birdSpeedRange) * Math.random()) * birdSpeed // 60%~140% of birdSpeed
-  stage.addChild(bird)
-  var wing = new PIXI.Sprite(textures['wing'][0])
-  wing.anchor.x = 0.5
-  wing.anchor.y = 0.5
-  stage.addChild(wing)
-  var text = new PIXI.Text(tweet.text, styleTweet)
-  text.anchor.y = 0.5
-  stage.addChild(text)
-  tweets.push({bird: bird, wing: wing, text: text})
-  moveBird(tweets[tweets.length - 1], 900, baseY)
-})
+  tweet['text'].text = text
+  tweets.push(tweet)
+}
 
 // - Interactivity & Animation ---
 function onButtonDown () {
@@ -102,12 +96,6 @@ function onButtonDown () {
   this.texture = textures['body']['crossed']
 }
 
-var styleGains = {
-  font: 'bold 2em Verdana, Geneva, sans-serif',
-  fill: 'white',
-  stroke: '#80bfff',
-  strokeThickness: 2
-}
 function showGains (amount, x, y) {
   var gain = new PIXI.Text(amount, styleGains)
   gain.anchor.x = 0.5
@@ -126,7 +114,7 @@ function animate () {
     animateTweet(tweet, index)
   })
   gains.forEach(function (gain, index) {
-    animateGain (gain, index)
+    animateGain(gain, index)
   })
   renderer.render(stage)
 }
@@ -175,22 +163,46 @@ function animateGain (gain, index) {
   gain.alpha -= 0.04
   gain.y -= 2
   if (gain.alpha <= 0) {
-    gain.destroy()
-    stage.removeChild(gain)
+    killSprite(gain)
     gains.splice(index, 1)
   }
 }
 
-
+function createBird () {
+  var bird = new PIXI.Sprite(textures['body']['base'])
+  bird.anchor.x = 0.5
+  bird.anchor.y = 0.5
+  bird.interactive = true
+  bird
+    .on('mousedown', onButtonDown)
+    .on('touchstart', onButtonDown)
+  bird.timer = 0
+  bird.baseY = 100 + (stageHeight - 150) * Math.random()
+  bird.amplitude = birdMinAplitude + (birdMaxAplitude - birdMinAplitude) * Math.random() // 5~50
+  bird.speed = (1.0 - birdSpeedRange + (2 * birdSpeedRange) * Math.random()) * birdSpeed // 60%~140% of birdSpeed
+  stage.addChild(bird)
+  var wing = new PIXI.Sprite(textures['wing'][0])
+  wing.anchor.x = 0.5
+  wing.anchor.y = 0.5
+  stage.addChild(wing)
+  var text = new PIXI.Text('', styleTweet)
+  text.anchor.y = 0.5
+  stage.addChild(text)
+  var tweet = { bird: bird, wing: wing, text: text }
+  moveBird(tweet, stageWidth + spriteSize / 2, bird.baseY)
+  return tweet
+}
 
 function killBird (index) {
-  tweets[index]['bird'].destroy
-  tweets[index]['wing'].destroy
-  tweets[index]['text'].destroy
-  stage.removeChild(tweets[index]['bird'])
-  stage.removeChild(tweets[index]['wing'])
-  stage.removeChild(tweets[index]['text'])
+  killSprite(tweets[index]['bird'])
+  killSprite(tweets[index]['wing'])
+  killSprite(tweets[index]['text'])
   tweets.splice(index, 1)
+}
+
+function killSprite (sprite) {
+  sprite.destroy
+  stage.removeChild(sprite)
 }
 
 function moveBird (tweet, x, y) {
@@ -198,6 +210,6 @@ function moveBird (tweet, x, y) {
   tweet['bird'].y = y
   tweet['wing'].x = x
   tweet['wing'].y = y
-  tweet['text'].x = x + 50
+  tweet['text'].x = x + spriteSize / 2 + SpriteSpacing
   tweet['text'].y = y
 }

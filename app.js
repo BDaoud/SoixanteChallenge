@@ -27,7 +27,7 @@ app.get('/', function (req, res) {
 client.stream('statuses/filter', {track: tracking}, function (stream) {
   stream.on('data', function (tweet) {
     if (tweet.text) {
-      io.emit('tweet', tweet)
+      io.emit('tweet', tweet.text)
     }
   })
   stream.on('error', function (error) {
